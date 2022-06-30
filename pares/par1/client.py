@@ -1,4 +1,5 @@
 import socket
+import os.path
 
 class Client:
     def __init__(self):
@@ -23,6 +24,10 @@ class Client:
                         break
                     f.write(data)
 
+            indice = open('indice.txt', 'w')
+            indice.write(str(namefile))
+            indice.close()
+
             print(f'{namefile} recebido.\n')
         else:
             print('Não foi dessa vez.\n')
@@ -32,9 +37,15 @@ class Client:
 
 if __name__ == "__main__":
     while True:
-        entrada = str(input('Digite R para requisitar ou X para encerrar: '))
+         # verifica se possui o arquivo
+        indice = open('indice.txt', 'r')
+        for linha in indice.readlines():
+            existe = os.path.exists(linha)
+            if not existe:
+                print(f'{linha} não existe.\n')
+        indice.close()
+
+        entrada = str(input('Digite R para requisitar: '))
         if entrada == 'r':
             c = Client()
             c.query()
-        if entrada == 'x':
-            break
