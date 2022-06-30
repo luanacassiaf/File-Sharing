@@ -11,9 +11,9 @@ class Client:
         namefile = str(input('Nome do arquivo a receber: '))
 
         # envia nome do arquivo para o servidor
-        self.client.send(namefile.encode())
+        self.client.send(namefile.encode('utf-8'))
 
-        response = self.client.recv(1024).decode()
+        response = self.client.recv(1024).decode('utf-8')
         if response == 'QUERYHIT':
             # escrever os dados do servidor
             with open(namefile, 'wb') as f:
@@ -27,7 +27,12 @@ class Client:
         else:
             print('Não foi dessa vez.\n')
 
+        self.client.close()
+
 
 if __name__ == "__main__":
-    c = Client()
-    c.query()
+    while True:
+        requisitar = str(input('Digite R para requisitar: '))
+        if requisitar == 'r':
+            c = Client()
+            c.query()

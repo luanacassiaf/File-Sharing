@@ -17,7 +17,7 @@ class Server:
             connection, address = self.server.accept()
 
             # recebe solicitação do cliente
-            namefile = connection.recv(1024).decode()
+            namefile = connection.recv(1024).decode('utf-8')
 
             # verifica se possui o arquivo
             indice = open('indice.txt', 'r')
@@ -28,7 +28,7 @@ class Server:
 
             if self.queryHit:
                 text = 'QUERYHIT'
-                connection.send(text.encode())
+                connection.send(text.encode('utf-8'))
                 # ler arquivo em bytes
                 with open(namefile, 'rb') as f:
                     for data in f.readlines():
@@ -37,7 +37,7 @@ class Server:
                 f.close()
             else:
                 text = 'Não tenho.'
-                connection.send(text.encode())
+                connection.send(text.encode('utf-8'))
                 print(f'Não tenho {namefile}.\n')
 
             self.queryHit = False
