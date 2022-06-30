@@ -4,7 +4,7 @@ class Client:
     def __init__(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # endereço que deseja conectar
-        self.client.connect(('localhost', 9999))
+        self.client.connect(('localhost', 7777))
         print('Conectado.\n')
 
     def query(self):
