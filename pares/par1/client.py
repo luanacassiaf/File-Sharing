@@ -37,13 +37,15 @@ class Client:
 
 if __name__ == "__main__":
     while True:
-         # verifica se possui o arquivo
-        indice = open('indice.txt', 'r')
-        for linha in indice.readlines():
-            existe = os.path.exists(linha)
-            if not existe:
-                print(f'{linha} não existe.\n')
-        indice.close()
+         # remove arquivos do índice que o nó não possui
+        with open("indice.txt", "r") as f:
+            linhas = f.readlines()
+        with open("indice.txt", "w") as f:
+            for linha in linhas:
+                existe = os.path.exists(linha)
+                if existe:
+                    f.write(linha)
+        f.close()
 
         entrada = str(input('Digite R para requisitar: '))
         if entrada == 'r':
