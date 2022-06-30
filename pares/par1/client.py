@@ -1,23 +1,35 @@
 import socket
 import os.path
 
+hosts = [8888, 9999]
+
 class Client:
     def __init__(self):
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # endereço que deseja conectar
-        self.client.connect(('localhost', 7777))
-        print('Conectado.\n')
+        self.obtive = False
+        self.namefile = str(input('Nome do arquivo a receber: '))
+        for host in hosts:
+            self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # endereços que deseja conectar
+            self.client.connect(('localhost', host))
+            print(f'\nConectado com localhost:{host}.')
+            self.query(host)
 
-    def query(self):
-        namefile = str(input('Nome do arquivo a receber: '))
+            indice = open('indice.txt', 'r')
+            for linha in indice:
+                if linha.strip() == self.namefile.strip():
+                    self.obtive = True
 
+            if self.obtive == True:
+                break
+
+    def query(self, host):
         # envia nome do arquivo para o servidor
-        self.client.send(namefile.encode())
+        self.client.send(self.namefile.encode())
 
         response = self.client.recv(1024).decode('utf-8')
         if response == 'QUERYHIT':
             # escrever os dados do servidor
-            with open(namefile, 'wb') as f:
+            with open(self.namefile, 'wb') as f:
                 while True:
                     data = self.client.recv(1000000)
                     if not data:
@@ -25,19 +37,20 @@ class Client:
                     f.write(data)
 
             indice = open('indice.txt', 'w')
-            indice.write(str(namefile))
+            # adiciona nome do arquivo no próprio índice
+            indice.write(str(self.namefile))
             indice.close()
 
-            print(f'{namefile} recebido.\n')
+            print(f'{self.namefile} recebido.\n')
         else:
-            print('Não foi dessa vez.\n')
+            print(f'{host} não possui o arquivo solicitado.\n')
 
         self.client.close()
 
 
 if __name__ == "__main__":
     while True:
-         # remove arquivos do índice que o nó não possui
+         # remove nome de arquivos no índice que este nó não possui
         with open("indice.txt", "r") as f:
             linhas = f.readlines()
         with open("indice.txt", "w") as f:
@@ -49,5 +62,4 @@ if __name__ == "__main__":
 
         entrada = str(input('Digite R para requisitar: '))
         if entrada == 'r':
-            c = Client()
-            c.query()
+            Client()

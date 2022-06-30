@@ -1,7 +1,7 @@
 import socket
 
 MYIP = 'localhost'
-MYPORT = 8888
+MYPORT = 9999
 
 class Server:
     def __init__(self):
@@ -45,7 +45,6 @@ class Server:
 
             self.queryHit = False
             connection.close()
-
 
 if __name__ == "__main__":
         Server()
