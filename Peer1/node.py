@@ -1,11 +1,12 @@
 import socket
-import os.path
+from os.path import *
+from os import listdir
 import threading
 import time
 
 MYIP = 'localhost'
-MYPORT = 3333
-hosts = [1111, 2222]
+MYPORT = 1111
+hosts = [2222, 3333]
 
 
 class Server:
@@ -75,19 +76,14 @@ class Client:
                         break
                     file.write(data)
 
-                # adiciona nome do arquivo no próprio índice
-                file = open('index.txt', 'w')
-                file.write(str(namefile))
-                file.close()
-
                 print(f'{namefile} recebido.\n')
             else:
                 print(f'{host} não possui o arquivo solicitado.\n')
 
             # confirmar existência do arquivo
-            exists = os.path.exists(namefile)
+            have = exists(namefile)
 
-            if exists == True:
+            if have == True:
                 break
 
         self.client.close()
@@ -95,12 +91,28 @@ class Client:
 
 def checkIndex():
     while True:
+        path = dirname(abspath('node.py'))
+        # faz uma lista com os arquivos existentes na pasta
+        files = [f for f in listdir(path) if (isfile(join(path, f)) and f != 'node.py' and f != 'index.txt')]
+
+        with open("index.txt", "r") as fread:
+            # faz uma lista com todas as linhas do índice
+            lines = fread.readlines()
+            for f in files:
+                    # se arquivo não está no índice, ele é adicionado
+                    if f not in lines:
+                        fwrite = open('index.txt', 'w')
+                        fwrite.write(str(f))
+                        fwrite.close()
+        fread.close()
+
         # remove do índice os arquivos que foram deletados
         with open("index.txt", "r") as fread:
+            # faz uma lista com todas as linhas do índice
             lines = fread.readlines()
             for line in lines:
-                exists = os.path.exists(line.strip())
-                if not exists:
+                have = exists(line.strip())
+                if not have:
                     fwrite = open("index.txt", "w")
                     lines.remove(line)
                     fwrite.writelines(lines)
