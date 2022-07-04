@@ -1,18 +1,20 @@
 import socket
-from os.path import *
-from os import listdir
+import os
 import threading
 import time
+import queue
 
 MYIP = 'localhost'
-MYPORT = 1111
-hosts = [2222, 3333]
+MYPORT = 10111
+hosts = [20222, 30333]
+dataQueue = queue.Queue()
 
 
 class Server:
     def __init__(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        queryHit = False
+        self.queryHit = False
+        dataQueue.put(self.server)
 
         # define endereço deste servidor
         self.server.bind((MYIP, MYPORT))
@@ -23,22 +25,24 @@ class Server:
 
         while True:
             # responsável por aceitar a conexão do cliente
-            connection, address = self.server.accept()
+            try:
+                connection, address = self.server.accept()
+                if address == MYPORT:
+                    break
+            except:
+                break
 
             # recebe solicitação do cliente
-            namefile = connection.recv(1024).decode('utf-8')
+            namefile = connection.recv(1024).decode('utf-8', 'ignore')
 
             # verifica se possui o arquivo
-            file = open('index.txt', 'r')
-            for line in file:
-                if line.strip() == namefile.strip():
-                    queryHit = True
-            file.close()
+            self.queryHit = os.path.exists(namefile)
 
-            if queryHit:
-                text = 'QUERYHIT'
+            if self.queryHit:
+                text = 'Query hit'
                 connection.send(text.encode('utf-8'))
 
+                time.sleep(2)
                 # ler arquivo em bytes
                 file = open(namefile, 'rb')
                 for data in file.readlines():
@@ -49,90 +53,81 @@ class Server:
                 text = 'Não tenho.'
                 connection.send(text.encode('utf-8'))
 
-            queryHit = False
+            self.queryHit = False
             connection.close()
+
+        return
 
 
 class Client:
     def __init__(self):
         namefile = str(input('Nome do arquivo a receber: '))
+        # confirmar se já possui o arquivo
+        have = os.path.exists(namefile)
+        if have:
+            print('Você já possui esse arquivo no diretório local.\n')
+        else:
+            # conectar-se aos endereços listados
+            for host in hosts:
+                try:
+                    self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self.client.connect(('localhost', host))
+                    print(f'\nConectado com {host}.')
+                except:
+                    print(f'Host {host} offline.\n')
+                    continue
 
-        # conectar-se aos endereços listados
-        for host in hosts:
-            self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.client.connect(('localhost', host))
-            print(f'\nConectado com {host}.')
+                # envia nome do arquivo para o servidor
+                self.client.send(namefile.encode('utf-8'))
 
-            # envia nome do arquivo para o servidor
-            self.client.send(namefile.encode())
+                response = self.client.recv(1024).decode('utf-8', 'ignore')
 
-            response = self.client.recv(1024).decode('utf-8')
-            if response == 'QUERYHIT':
-                # registrar os dados enviados pelo servidor
-                file = open(namefile, 'wb')
-                while True:
-                    data = self.client.recv(1000000)
-                    if not data:
-                        break
-                    file.write(data)
+                if response.strip() == 'Query hit':
+                    # registrar os dados enviados pelo servidor
+                    file = open(namefile, 'wb')
+                    while True:
+                        data = self.client.recv(1000000)
+                        if not data:
+                            break
+                        file.write(data)
+                    file.close()
 
-                print(f'{namefile} recebido.\n')
-            else:
-                print(f'{host} não possui o arquivo solicitado.\n')
+                    print(f'{namefile} recebido.\n')
+                else:
+                    print(f'{host} não possui o arquivo solicitado.\n')
 
-            # confirmar existência do arquivo
-            have = exists(namefile)
+                # confirmar existência do arquivo
+                have = os.path.exists(namefile)
 
-            if have == True:
-                break
+                if have == True:
+                    break
 
-        self.client.close()
+            self.client.close()
 
-
-def checkIndex():
-    while True:
-        path = dirname(abspath('node.py'))
-        # faz uma lista com os arquivos existentes na pasta
-        files = [f for f in listdir(path) if (isfile(join(path, f)) and f != 'node.py' and f != 'index.txt')]
-
-        with open("index.txt", "r") as fread:
-            # faz uma lista com todas as linhas do índice
-            lines = fread.readlines()
-            for f in files:
-                    # se arquivo não está no índice, ele é adicionado
-                    if f not in lines:
-                        fwrite = open('index.txt', 'w')
-                        fwrite.write(str(f))
-                        fwrite.close()
-        fread.close()
-
-        # remove do índice os arquivos que foram deletados
-        with open("index.txt", "r") as fread:
-            # faz uma lista com todas as linhas do índice
-            lines = fread.readlines()
-            for line in lines:
-                have = exists(line.strip())
-                if not have:
-                    fwrite = open("index.txt", "w")
-                    lines.remove(line)
-                    fwrite.writelines(lines)
-                    fwrite.close()
-        fread.close()
+            return
 
 
 def main():
     while True:
-        entry = str(input('Digite R para requisitar: '))
-        if entry == 'r':
+        entry = str(input('Digite R para requisitar ou X para finalizar: '))
+        if entry == 'r' or entry == 'R':
             Client()
+        elif entry == 'x' or entry == 'X':
+            shutMeDown = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            shutMeDown.connect(('localhost', MYPORT))
+            server = dataQueue.get()
+            server.close()
+            event.set()
+            break
+
+    return
 
 
 if __name__ == "__main__":
-    callCheckIndex = threading.Thread(target=checkIndex)
+    event = threading.Event()
     callServer = threading.Thread(target=Server)
     callMain = threading.Thread(target=main)
 
-    callCheckIndex.start()
     callServer.start()
     time.sleep(2)
     callMain.start()
