@@ -1,14 +1,15 @@
 import socket
 import os
+import queue
 import threading
 import time
-import queue
 
 MYIP = 'localhost'
-MYPORT = 20222
-hosts = [10111, 30333]
+MYPORT = 2222
+hosts = [1111, 3333]
 dataQueue = queue.Queue()
-
+event = threading.Event()
+flag = -2
 
 
 class Server:
@@ -61,12 +62,13 @@ class Server:
 
 
 class Client:
-    def __init__(self):
-        namefile = str(input('Nome do arquivo a receber: '))
+    def __init__(self, namefile):
+        global flag
         # confirmar se já possui o arquivo
         have = os.path.exists(namefile)
         if have:
             print('Você já possui esse arquivo no diretório local.\n')
+            flag = 3
         else:
             # conectar-se aos endereços listados
             for host in hosts:
@@ -82,6 +84,7 @@ class Client:
                 self.client.send(namefile.encode('utf-8'))
 
                 response = self.client.recv(1024).decode('utf-8', 'ignore')
+                print(response)
 
                 if response.strip() == 'Query hit':
                     # registrar os dados enviados pelo servidor
@@ -89,46 +92,48 @@ class Client:
                     while True:
                         data = self.client.recv(1000000)
                         if not data:
+                            flag = 0
                             break
                         file.write(data)
                     file.close()
 
                     print(f'{namefile} recebido.\n')
+                    flag = 1
                 else:
                     print(f'{host} não possui o arquivo solicitado.\n')
+                    flag = 2
 
                 # confirmar existência do arquivo
                 have = os.path.exists(namefile)
 
                 if have == True:
+                    self.client.close()
                     break
 
-            self.client.close()
-
-            return
+        return
 
 
-def main():
+def run(child_conn):
     while True:
-        entry = str(input('Digite R para requisitar ou X para finalizar: '))
-        if entry == 'r' or entry == 'R':
-            Client()
-        elif entry == 'x' or entry == 'X':
-            shutMeDown = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            shutMeDown.connect(('localhost', MYPORT))
-            server = dataQueue.get()
-            server.close()
-            event.set()
+        data = child_conn.recv()
+        print(data)
+        if data[0]:
+            if(data[1] != 0):
+                print(data[1])
+                Client(data[1])
+                child_conn.send(flag)
+        elif data[1] == 0:
             break
+
+        data[0] = False
+
+    child_conn.close()
 
     return
 
 
-if __name__ == "__main__":
-    event = threading.Event()
+def main(child_conn):
     callServer = threading.Thread(target=Server)
-    callMain = threading.Thread(target=main)
-
     callServer.start()
-    time.sleep(2)
-    callMain.start()
+
+    run(child_conn)
