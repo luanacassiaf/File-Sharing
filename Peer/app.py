@@ -7,6 +7,7 @@ import time
 
 can_destroy = 0
 
+# Front-end
 class Application:
     def __init__(self, parent_conn, p, master=None):
         self.parent_conn = parent_conn
@@ -45,14 +46,14 @@ class Application:
 
         self.autenticar = Button(self.quartoContainer)
         self.autenticar["text"] = "Requisitar"
-        self.autenticar["font"] = ("Arial", "12")
+        self.autenticar["font"] = self.fontePadrao
         self.autenticar["width"] = 12
         self.autenticar["command"] = self.option
         self.autenticar.pack()
 
         self.autenticar = Button(self.quartoContainer)
         self.autenticar["text"] = "Desconectar"
-        self.autenticar["font"] = ("Arial", "12")
+        self.autenticar["font"] = self.fontePadrao
         self.autenticar["width"] = 12
         self.autenticar["command"] = self.kill
         self.autenticar.pack()
@@ -60,6 +61,7 @@ class Application:
         self.mensagem = Label(self.quartoContainer, text="Nó conectado", font=self.fontePadrao)
         self.mensagem.pack()
 
+    # Envio do arquivo solicitado para o back-end
     def option(self):
         flag = -1
         self.parent_conn.send([True, self.nome.get()])
@@ -67,9 +69,7 @@ class Application:
         while True:
             flag = self.parent_conn.recv()
 
-            if flag == 0:
-                self.mensagem["text"] = "Erro ao reeber o arquivo."
-            elif flag == 1:
+            if flag == 1:
                 self.mensagem["text"] = "Arquivo recebido com sucesso."
             elif flag == 2:
                 self.mensagem["text"] = "Hosts não possuem o arquivo."
@@ -79,6 +79,7 @@ class Application:
             if flag != -1:
                 break
 
+    # Fecha os dois processos e as threads internas
     def kill(self):
         global can_destroy
         
@@ -93,8 +94,8 @@ class Application:
 
         self.mensagem["text"] = "Nó desconectado"
         can_destroy = 1
-        print(can_destroy)
 
+    # Confirmação de fechamento da tela: se o nó ainda está conectado sobe um aviso
     def on_closing(self):
         if can_destroy != 1:
             if messagebox.askokcancel("Aviso!", "Você não desconectou o nó, as portas ainda estão ocupadas. Tem certeza que deseja fechar a aplicação?"):
@@ -103,7 +104,10 @@ class Application:
             root.destroy()
 
 if __name__ == "__main__":
+    # Pipe para comunicação entre dois processos
     parent_conn, child_conn = Pipe()
+
+    # Abre o front-end e o back-end como dois processos paralelos
     p = Process(target=main, args=(child_conn,))
     p.start()
 
