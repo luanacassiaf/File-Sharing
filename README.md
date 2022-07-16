@@ -5,3 +5,8 @@ Foi implementada uma rede peer-to-peer com objetivo de compartilhar mídias digi
 
 Esse projeto possui influência da rede Gnutella, logo não são utilizados trackers para buscar arquivos. Em vez disso, é implementada a propagação de mensagens de solicitação.
 Assim, um nó envia para os demais nós da rede o nome do arquivo que deseja receber; o nó que possuir o arquivo desejado irá enviá-lo ao solicitante.
+
+* Execução:
+```bash
+$ python3 app.py
+```
