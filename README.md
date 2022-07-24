@@ -1,5 +1,5 @@
 # P2P-File-Sharing
-Projeto desenvolvido como projeto final da disciplina de Sistemas Distribuídos, do curso Ciência da Computação.
+Trabalho desenvolvido como projeto final da disciplina de Sistemas Distribuídos, do curso Ciência da Computação.
 
 Foi implementada uma rede peer-to-peer com objetivo de compartilhar mídias digitais entre seus pares. A rede utiliza sockets para criar conexões TCP entre seus nós.
 
